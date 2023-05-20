@@ -10,7 +10,7 @@ class Classifier:
     def __init__(self, audio_file_name):
         self.audio_file_name = audio_file_name
         # Customize and associate model for Classifier
-        self.base_options = python.BaseOptions(model_asset_path='classifier.tflite')
+        self.base_options = python.BaseOptions(model_asset_path='..\classifier.tflite')
         self.options = audio.AudioClassifierOptions(
             base_options=self.base_options, max_results=4)
 

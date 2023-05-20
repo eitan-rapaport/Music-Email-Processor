@@ -25,12 +25,11 @@ import os
 import io
 import argparse
 from multiprocessing import Pool
-import traceback
 import sys
 import cyrtranslit
 import glob
 import logging as log
-
+from MailDownloader import MailDownloader
 
 
 
@@ -58,24 +57,13 @@ if args.no_classification == False:
 
 print(args)
 output_path = "C:\\Users\\Eitan\\Music\\dev\\Handclap detection"
-exceptions = {'Video': [], 'WAV': []}
+
 
 if args.download_mp3 == True:
     preferred_codec = 'mp3'
 else:
     preferred_codec = 'wav'
 
-ydl_opts = {
-    'format': 'bestaudio/best',
-    'postprocessors': [{
-        'key': 'FFmpegExtractAudio',
-        'preferredcodec': preferred_codec,
-        'preferredquality': '320',
-    }],
-}
-ydl_video = {
-    'format': 'best',
-}
 
 classification_results = {}
     
@@ -92,27 +80,6 @@ def create_folder(path):
         print('Created folder ' + folder)
 
     os.chdir(path)
-
-def download(link):
-    # Download audio
-    log.info(f"Downloading {link}")
-    try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([link])
-    except Exception as e:
-        log.error(f"Exception while downloading WAV for {link}", exc_info=e)
-        log.error(e)
-        exceptions['WAV'].append(link)
-
-    # Download Video
-    if args.download_video == True:
-        try:
-            with yt_dlp.YoutubeDL(ydl_video) as ydl:
-                ydl.download([link])
-        except Exception as e:
-            log.error(f"Exception while downloading Video for {link}", exc_info=e)
-            log.error(e)
-            exceptions['Video'].append(link)
 
 
 def parse_email(mail):
@@ -145,17 +112,9 @@ def print_found_urls(urls):
     for i in urls:
         log.info(i)
 
-def download_all_uris(urls):
-    log.info("2. Downloading URLs")
-    with Pool() as pool:
-        try:
-            pool.map(download, urls)
-        except Exception as e:
-            log.error("Encountered exception: ", e, "for file: ", urls)
-            traceback.print_exc(file=sys.stdout)
-    log.info("2. Finished downloading")
+
         
-def normalize_all_filenames(files):
+def normalize_all_filenames():
     files = get_file_list()
     log.info("3. Normalizing all file names")
     for file in files:
@@ -215,6 +174,7 @@ def normalize_audio_file(file):
         new_file = re.sub("\.wav", "N.wav", file)
         normalized_file.export(new_file, format='wav')
 
+#BUG: not deleting N object
         if args.keep_original == False:
             log.info("Deleting " + file)
             os.remove(file)   
@@ -277,7 +237,7 @@ def find_urls_in_email(email_content):
 
 def get_file_list():
     log.info("Getting file list")
-    files = glob.glob("test\*.wav")
+    files = glob.glob("*.wav")
     log.info(files)
     return files
 
@@ -325,18 +285,22 @@ def log_classification_results():
                     Speech: {3}""".format(filename, results["Applause"], results["Silence"], results["Speech"]))
 
 
+def download_all_uris(urls):
+    downloader = MailDownloader(log)
+    downloader.download_all_uris(urls)
+
 
 def main():
-    # create_folder(path)
+    create_folder(path)
     configure_log()
-    # email_content = read_email()
-    # urls = find_urls_in_email(email_content)
-    # print_found_urls(urls)
-    # download_all_uris(urls)
+    email_content = read_email()
+    urls = find_urls_in_email(email_content)
+    print_found_urls(urls)
+    download_all_uris(urls)
     print(args.no_classification)
     # compress_all_files()
-
-    # normalize_all_audio_files()
+    normalize_all_filenames()
+    normalize_all_audio_files()
     # add_ms_of_silence_to_all_files()
     if args.no_classification == False:
         classify_all_audio_files()
