@@ -18,7 +18,6 @@ from pydub.silence import detect_nonsilent
 from pydub.effects import normalize
 from pydub.effects import compress_dynamic_range
 import re
-import yt_dlp
 import __future__
 from os import path
 import os
@@ -29,7 +28,7 @@ import sys
 import cyrtranslit
 import glob
 import logging as log
-from MailDownloader import MailDownloader
+import MailDownloader
 
 
 
@@ -41,7 +40,7 @@ parser = argparse.ArgumentParser(
     description='Download Youtube videos as wav and mp4 and normalize them', prog='Download Youtube MP3')
 parser.add_argument('--download-video', action='store_true', default=False,
                     help="Download the video")
-parser.add_argument('--keep-original', action='store_true', default=True,
+parser.add_argument('--keep-original', action='store_true', default=False,
                     help="Keep the not normalized wav file")
 parser.add_argument('--no-edit', action='store_true', default=False,
                     help="disable adding silence, compressing and normalizing")
@@ -241,6 +240,18 @@ def get_file_list():
     log.info(files)
     return files
 
+
+def convert_to_mp3():
+    files = get_file_list()
+    for file in files:
+        audio = AudioSegment.from_wav(file)
+        filename = file.replace("wav","mp3")
+        audio.export(filename,format='mp3')
+
+        if args.keep_original == False:
+            log.info("Deleting " + file)
+            os.remove(file)   
+
 def configure_log():
     log.basicConfig(
     level=log.INFO,
@@ -286,8 +297,7 @@ def log_classification_results():
 
 
 def download_all_uris(urls):
-    downloader = MailDownloader(log)
-    downloader.download_all_uris(urls)
+    MailDownloader.download_all_uris(urls, log)
 
 
 def main():
@@ -298,14 +308,15 @@ def main():
     print_found_urls(urls)
     download_all_uris(urls)
     print(args.no_classification)
-    # compress_all_files()
+    compress_all_files()
     normalize_all_filenames()
     normalize_all_audio_files()
-    # add_ms_of_silence_to_all_files()
-    if args.no_classification == False:
+    add_ms_of_silence_to_all_files()
+    if not args.download_mp3 and args.no_classification == False:
         classify_all_audio_files()
-    log_classification_results()
-    # print_exceptions(exceptions)
+        log_classification_results()
+    convert_to_mp3()
+    #print_exceptions(exceptions)
     #remove_clapping(file_list)
 
 
