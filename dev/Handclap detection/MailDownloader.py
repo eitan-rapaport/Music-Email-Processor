@@ -1,8 +1,9 @@
 import yt_dlp
 #from multiprocessing import Pool
 
+exceptions = {'Video': [], 'WAV': []}
 
-def download_all_uris(urls, logger, preferred_codec='wav', download_video=False):
+def download_all_uris(urls, logger, download_video=False):
     logger.info("2. Downloading URLs")
     #for parallelism. note - no args:
         # with Pool() as pool:
@@ -12,12 +13,12 @@ def download_all_uris(urls, logger, preferred_codec='wav', download_video=False)
         #         logger.error("Encountered exception: ", e, "for file: ", urls)
     for i in range(len(urls)):
         try:
-            download(link=urls[i], logger=logger, preferred_codec=preferred_codec, download_video=download)
+            download(link=urls[i], logger=logger, preferred_codec='wav', download_video=download_video)
         except Exception as e:
             logger.error("Encountered exception: ", e, "for file: ", urls[i])
     logger.info("2. Finished downloading")
 
-def download(link, logger, preferred_codec, download_video):
+def download(link, logger, preferred_codec='wav', download_video=False):
 # Download audio
     ydl_opts = {
     'format': 'bestaudio/best',
@@ -26,13 +27,7 @@ def download(link, logger, preferred_codec, download_video):
         'preferredcodec': preferred_codec,
         'preferredquality': '320',
         }],
-    }
-    ydl_video = {
-        'format': 'best',
-    }
-    download_video = download_video
-    logger = logger
-    exceptions = {'Video': [], 'WAV': []}
+    }    
 
     logger.info(f"Downloading {link}")
     try:
@@ -45,6 +40,9 @@ def download(link, logger, preferred_codec, download_video):
 
     # Download Video
     if download_video == True:
+        ydl_video = {
+            'format': 'best',
+        }
         try:
             with yt_dlp.YoutubeDL(ydl_video) as ydl:
                 ydl.download([link])

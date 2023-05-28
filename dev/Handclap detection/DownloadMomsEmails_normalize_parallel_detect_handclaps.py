@@ -14,60 +14,29 @@
 #!pip install cyrtranslit yt_dlp pydub
 
 from pydub import AudioSegment
-from pydub.silence import detect_nonsilent
 from pydub.effects import normalize
 from pydub.effects import compress_dynamic_range
 import re
 import __future__
-from os import path
 import os
 import io
 import argparse
 from multiprocessing import Pool
-import sys
 import cyrtranslit
 import glob
 import logging as log
 import MailDownloader
+from google_classifier import Classifier
 
+
+output_path = "C:\\Users\\Eitan\\Music\\dev\\Handclap detection"
 
 
 # Vars:
 SILENCE_AT_BEGINNING_AND_END_MS = 3000
-APPLAUSE = "Applause"
-
-parser = argparse.ArgumentParser(
-    description='Download Youtube videos as wav and mp4 and normalize them', prog='Download Youtube MP3')
-parser.add_argument('--download-video', action='store_true', default=False,
-                    help="Download the video")
-parser.add_argument('--keep-original', action='store_true', default=False,
-                    help="Keep the not normalized wav file")
-parser.add_argument('--no-edit', action='store_true', default=False,
-                    help="disable adding silence, compressing and normalizing")
-parser.add_argument('--no-classification', action='store_true', default=False,
-                    help='Do not classify the audio parts in sections. Will help performance')
-parser.add_argument('--download-mp3', action='store_true', default=False,
-                    help='Download the files as MP3 instead of WAV. Feature not completely ready')
-
-args = parser.parse_args()
-
-if args.no_classification == False:
-    from google_classifier import Classifier
-
-print(args)
-output_path = "C:\\Users\\Eitan\\Music\\dev\\Handclap detection"
 
 
-if args.download_mp3 == True:
-    preferred_codec = 'mp3'
-else:
-    preferred_codec = 'wav'
-
-
-classification_results = {}
-    
-
-def create_folder(path):
+def create_folder():
     folder = input("Please choose the folder name: ")
     path = os.path.join(output_path, folder)
 
@@ -106,11 +75,11 @@ def print_exceptions(exceptions):
         for i in exceptions['Video']:
             log.error(i)
 
+
 def print_found_urls(urls):
     log.info("1. Found the following URIs, {0} in total:".format(len(urls)))
     for i in urls:
         log.info(i)
-
 
         
 def normalize_all_filenames():
@@ -119,15 +88,19 @@ def normalize_all_filenames():
     for file in files:
         normalize_filename(file)
 
+
 def normalize_filename(file):
     if not file.endswith('.wav'):
         return
 
     log.info("3.1 Normalizing {0}".format(file))
+    #fix cyrillic characters
     new_name = re.sub('\W+', ' ', cyrtranslit.to_latin(file, "ru"))
     new_name = re.sub(' wav', ".wav", new_name)
     os.replace(file, new_name)
-    log.info("3.1 Replaced. Old file name: {0}, New file name: {1}".format(file, new_name))
+    log.info("3.2 Replaced. Old file name: {0}, New file name: {1}".format(file, new_name))
+    return new_name
+
 
 def compress_all_files():
     files = get_file_list()
@@ -147,11 +120,11 @@ def compress_file(file):
         new_file = re.sub("\.wav", "_C.wav", file)
         compressed_sound.export(new_file , format='wav')
 
-        if args.keep_original == False:
-            log.info("Deleting " + file)
-            os.remove(file)
+        log.info("Deleting " + file)
+        os.remove(file)
 
-        log.info(f"4.1 Compressed {new_file}")
+        log.info(f"4.2 Compressed {new_file}")
+        return new_file
 
 
 def normalize_all_audio_files():
@@ -173,11 +146,10 @@ def normalize_audio_file(file):
         new_file = re.sub("\.wav", "N.wav", file)
         normalized_file.export(new_file, format='wav')
 
-#BUG: not deleting N object
-        if args.keep_original == False:
-            log.info("Deleting " + file)
-            os.remove(file)   
-        log.info(f"5.1 Normalized {new_file}")     
+        log.info("Deleting " + file)
+        os.remove(file)   
+        log.info(f"5.2 Normalized {new_file}")     
+        return new_file
 
 
 def add_ms_of_silence_to_all_files():
@@ -197,11 +169,11 @@ def add_silence_to_file(file):
     new_file = re.sub("\.wav", "S.wav", file)
     output.export(new_file, format='wav')
 
-    if args.keep_original == False:
-        log.info("Deleting " + file)
-        os.remove(file)
+    log.info("Deleting " + file)
+    os.remove(file)
 
-    log.info(f"6.1 Added silence to {new_file}")
+    log.info(f"6.2 Added silence to {new_file}")
+    return new_file
 
 
 def read_email():
@@ -235,11 +207,8 @@ def find_urls_in_email(email_content):
 
 
 def get_file_list():
-    log.info("Getting file list")
-    files = glob.glob("*.wav")
-    log.info(files)
-    return files
-
+    return glob.glob("*.wav")
+    
 
 def convert_to_mp3():
     files = get_file_list()
@@ -248,9 +217,10 @@ def convert_to_mp3():
         filename = file.replace("wav","mp3")
         audio.export(filename,format='mp3')
 
-        if args.keep_original == False:
-            log.info("Deleting " + file)
-            os.remove(file)   
+    
+        log.info("Deleting " + file)
+        os.remove(file)   
+
 
 def configure_log():
     log.basicConfig(
@@ -262,33 +232,31 @@ def configure_log():
         ]
     )
 
-def remove_clapping(file_list):
-    audio = AudioSegment.from_wav(file_list[0])
-    min_silence_len = 1000  # minimum silence length in milliseconds
-    silence_thresh = -50  # silence threshold in dBFS
-    non_silent_parts = detect_nonsilent(audio, min_silence_len=min_silence_len, silence_thresh=silence_thresh)
-    audio_no_claps = AudioSegment.silent(duration=0)
-    for start, end in non_silent_parts:
-        audio_no_claps += audio[start:end]
 
+def remove_clapping(classification_results):
+    for file, results in classification_results:
+        if len(classification_results[file]["Applause"]) >= 2:
+            log.info(f"{file} has more than 3 seconds of applause")
 
 def classify_single_audio_file(audio_file):
-    log.info(f"Got {audio_file}")
-    
     classifier = Classifier(audio_file)
     return classifier.identify()
 
 
-def classify_all_audio_files():
-    files = get_file_list()
-    log.info("7. CLASSIFYING FILES")
-    for i in range(len(files)):
-        results = classify_single_audio_file(files[i])
-        classification_results[files[i]] = results
-    log.info("7. END CLASSIFYING")
+def classify_all_audio_files_if_needed(arguments):
+    classification_results = {}
+    if not arguments.download_mp3 and arguments.no_classification == False:
+        files = get_file_list()
+        log.info("7.1 CLASSIFYING FILES")
+        for i in range(len(files)):
+            results = classify_single_audio_file(files[i])
+            classification_results[files[i]] = results
+        log.info("7.2 END CLASSIFYING")
+        log_classification_results(classification_results)
+    return classification_results
 
 
-def log_classification_results():
+def log_classification_results(classification_results):
     for filename,results in classification_results.items():
         log.info("""Timestamps classification results for {0}:
                     Applause: {1}
@@ -296,29 +264,54 @@ def log_classification_results():
                     Speech: {3}""".format(filename, results["Applause"], results["Silence"], results["Speech"]))
 
 
-def download_all_uris(urls):
-    MailDownloader.download_all_uris(urls, log)
-
-
-def main():
-    create_folder(path)
-    configure_log()
+def download_files(arguments):
     email_content = read_email()
     urls = find_urls_in_email(email_content)
     print_found_urls(urls)
-    download_all_uris(urls)
-    print(args.no_classification)
-    compress_all_files()
-    normalize_all_filenames()
-    normalize_all_audio_files()
-    add_ms_of_silence_to_all_files()
-    if not args.download_mp3 and args.no_classification == False:
-        classify_all_audio_files()
-        log_classification_results()
-    convert_to_mp3()
-    #print_exceptions(exceptions)
-    #remove_clapping(file_list)
+    MailDownloader.download_all_uris(urls, log, arguments.download_video)
 
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+    description='Download Youtube videos as wav and mp4 and normalize them', prog='Download Youtube MP3')
+    parser.add_argument('--download-video', action='store_true', default=False,
+                        help="Download the video")
+    parser.add_argument('--keep-original', action='store_true', default=False,
+                        help="Keep the not normalized wav file")
+    parser.add_argument('--no-edit', action='store_true', default=False,
+                        help="disable adding silence, compressing and normalizing")
+    parser.add_argument('--no-classification', action='store_true', default=False,
+                        help='Do not classify the audio parts in sections. Will help performance')
+
+    return parser.parse_args()
+
+
+def apply_logic_to_file(file):
+    filename = normalize_filename(file)
+    filename = compress_file(filename)
+    filename = normalize_audio_file(filename)
+    filename = add_silence_to_file(filename)
+
+
+def apply_main_logic():
+    files = get_file_list()
+    p = Pool(len(files))
+    p.map(apply_logic_to_file, files)
+    p.close()
+    p.join()
+
+def main():
+    arguments = parse_args()
+    create_folder()
+    download_files(arguments)
+    apply_main_logic()
+    classify_all_audio_files_if_needed(arguments)
+    convert_to_mp3()
+    #remove_clapping()
+    #print_exceptions(exceptions)
+
+
+configure_log()
 
 if __name__ == "__main__":
     main()
