@@ -234,8 +234,11 @@ def configure_log():
 
 
 def remove_clapping(classification_results):
-    for file, results in classification_results:
-        if len(classification_results[file]["Applause"]) >= 2:
+    #BUG: it seems that the classifier is sometimes returning indexes of Silent\Applause\Speech that are 
+    # bigger than file length. e.g: "Tchaikovsky Waltz from Sleeping Beauty"
+    # File length 293 seconds. Silence indexes: [0, 1, 2, 294, 295, 296, 297, 298, 299, 300]
+    for file, results in classification_results.items():
+        if len(results["Applause"]) >= 2:
             log.info(f"{file} has more than 3 seconds of applause")
 
 def classify_single_audio_file(audio_file):
@@ -245,11 +248,14 @@ def classify_single_audio_file(audio_file):
 
 def classify_all_audio_files_if_needed(arguments):
     classification_results = {}
-    if not arguments.download_mp3 and arguments.no_classification == False:
+    if arguments.no_classification == False:
         files = get_file_list()
         log.info("7.1 CLASSIFYING FILES")
         for i in range(len(files)):
             results = classify_single_audio_file(files[i])
+            audio = AudioSegment.from_file(files[i])
+            file_length = audio.duration_seconds
+            results["File Length"] = file_length
             classification_results[files[i]] = results
         log.info("7.2 END CLASSIFYING")
         log_classification_results(classification_results)
@@ -261,7 +267,9 @@ def log_classification_results(classification_results):
         log.info("""Timestamps classification results for {0}:
                     Applause: {1}
                     Silence: {2}
-                    Speech: {3}""".format(filename, results["Applause"], results["Silence"], results["Speech"]))
+                    Speech: {3}
+                    File Length: {4}""".format(filename, results["Applause"], results["Silence"], results["Speech"],
+                                               results["File Length"]))
 
 
 def download_files(arguments):
@@ -302,15 +310,16 @@ def apply_main_logic():
 
 def main():
     arguments = parse_args()
-    create_folder()
-    download_files(arguments)
-    apply_main_logic()
-    classify_all_audio_files_if_needed(arguments)
-    convert_to_mp3()
-    #remove_clapping()
+    # create_folder()
+    # download_files(arguments)
+    # apply_main_logic()
+    os.chdir("C:\\Users\\Eitan\\Music\\dev\\Handclap detection\\test")
+    classification_results = classify_all_audio_files_if_needed(arguments)
+    #convert_to_mp3()
+    remove_clapping(classification_results)
     #print_exceptions(exceptions)
 
-
+#configuring the logging before the main function so every thread will have logging capabilities
 configure_log()
 
 if __name__ == "__main__":
