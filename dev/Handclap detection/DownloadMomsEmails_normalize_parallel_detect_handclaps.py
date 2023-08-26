@@ -28,7 +28,7 @@ import logging as log
 import MailDownloader
 from google_classifier import Classifier
 
-
+# TODO: change this to something current:
 output_path = "C:\\Users\\Eitan\\Music\\dev\\Handclap detection"
 
 
@@ -89,10 +89,12 @@ def normalize_all_filenames():
         normalize_filename(file)
 
 
-def normalize_filename(file):
+def normalize_filename(file: str):
     if not file.endswith('.wav'):
         return
-
+    
+    new_name = file.replace("：", "")
+    new_name = file.replace(":", "")
     log.info("3.1 Normalizing {0}".format(file))
     #fix cyrillic characters
     new_name = re.sub('\W+', ' ', cyrtranslit.to_latin(file, "ru"))
@@ -135,6 +137,11 @@ def normalize_all_audio_files():
     log.info("5. Finished normalizing")
 
 
+def match_target_amplitude(sound, target_dBFS):
+    change_in_dBFS = target_dBFS - sound.dBFS
+    return sound.apply_gain(change_in_dBFS)
+
+
 def normalize_audio_file(file):
     if not file.endswith('.wav'):
         pass
@@ -142,9 +149,10 @@ def normalize_audio_file(file):
     else:
         log.info(f"5.1 Normalizing {file}")
         raw_sound = AudioSegment.from_file(file)
-        normalized_file = normalize(raw_sound, -1)
+        normalized_sound = match_target_amplitude(raw_sound, -15.0)
+        #normalized_file = normalize(raw_sound, -3)
         new_file = re.sub("\.wav", "N.wav", file)
-        normalized_file.export(new_file, format='wav')
+        normalized_sound.export(new_file, format='wav')
 
         log.info("Deleting " + file)
         os.remove(file)   
@@ -216,7 +224,6 @@ def convert_to_mp3():
         audio = AudioSegment.from_wav(file)
         filename = file.replace("wav","mp3")
         audio.export(filename,format='mp3')
-
     
         log.info("Deleting " + file)
         os.remove(file)   
@@ -225,9 +232,9 @@ def convert_to_mp3():
 def configure_log():
     log.basicConfig(
     level=log.INFO,
-    format='%(asctime)s,%(funcName)s,%(levelname)s,%(message)s',
+    format='%(asctime)s,%(funcName)s,%(levelname)s,%(thread)d,%(message)s',
     handlers=[
-        log.FileHandler("debug.log"),
+        log.FileHandler(os.path.join(output_path, "debug.log"),'a','utf-8'),
         log.StreamHandler()
         ]
     )
@@ -264,7 +271,7 @@ def classify_all_audio_files_if_needed(arguments):
 
 def log_classification_results(classification_results):
     for filename,results in classification_results.items():
-        log.info("""Timestamps classification results for {0}:
+        log.info("""Classification for {0}:
                     Applause: {1}
                     Silence: {2}
                     Speech: {3}
@@ -308,14 +315,22 @@ def apply_main_logic():
     p.close()
     p.join()
 
+
+def apply_main_logic_sequential():
+    files = get_file_list()
+    for file in files:
+        apply_logic_to_file(file)
+
+
 def main():
     arguments = parse_args()
-    # create_folder()
-    # download_files(arguments)
-    # apply_main_logic()
-    os.chdir("C:\\Users\\Eitan\\Music\\dev\\Handclap detection\\test")
-    classification_results = classify_all_audio_files_if_needed(arguments)
-    #convert_to_mp3()
+    create_folder()
+    configure_log()
+    download_files(arguments)
+    apply_main_logic()
+    #apply_main_logic_sequential()
+    classification_results = classify_all_audio_files_if_needed(arguments) 
+    convert_to_mp3()
     remove_clapping(classification_results)
     #print_exceptions(exceptions)
 
