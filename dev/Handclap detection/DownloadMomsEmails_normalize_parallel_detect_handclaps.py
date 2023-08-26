@@ -137,11 +137,6 @@ def normalize_all_audio_files():
     log.info("5. Finished normalizing")
 
 
-def match_target_amplitude(sound, target_dBFS):
-    change_in_dBFS = target_dBFS - sound.dBFS
-    return sound.apply_gain(change_in_dBFS)
-
-
 def normalize_audio_file(file):
     if not file.endswith('.wav'):
         pass
@@ -149,15 +144,16 @@ def normalize_audio_file(file):
     else:
         log.info(f"5.1 Normalizing {file}")
         raw_sound = AudioSegment.from_file(file)
-        normalized_sound = match_target_amplitude(raw_sound, -15.0)
-        #normalized_file = normalize(raw_sound, -3)
-        new_file = re.sub("\.wav", "N.wav", file)
-        normalized_sound.export(new_file, format='wav')
+        #normalized_sound = match_target_amplitude(raw_sound, -15.0)
+        normalized_file = normalize(raw_sound)
+        new_file_name = re.sub("\.wav", "N.wav", file)
+        normalized_file.export(new_file_name, format='wav')
+        #normalized_sound.export(new_file, format='wav')
 
         log.info("Deleting " + file)
         os.remove(file)   
-        log.info(f"5.2 Normalized {new_file}")     
-        return new_file
+        log.info(f"5.2 Normalized {new_file_name}")     
+        return new_file_name
 
 
 def add_ms_of_silence_to_all_files():
