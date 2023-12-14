@@ -9,6 +9,8 @@
 
 # TODO: filter lists out
 
+#!pip install cyrtranslit yt_dlp pydub
+
 from pydub import AudioSegment
 from pydub.silence import detect_nonsilent
 from pydub.effects import normalize
@@ -52,7 +54,7 @@ ydl_opts = {
     'format': 'bestaudio/best',
     'postprocessors': [{
         'key': 'FFmpegExtractAudio',
-        'preferredcodec': 'mp3',
+        'preferredcodec': 'wav',
         'preferredquality': '320',
     }],
 }
