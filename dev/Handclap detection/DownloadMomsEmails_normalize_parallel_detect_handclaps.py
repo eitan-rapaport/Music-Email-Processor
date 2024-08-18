@@ -11,7 +11,7 @@
 
 # TODO: filter lists out
 
-#!pip install cyrtranslit yt_dlp pydub
+#!pip install cyrtranslit yt_dlp pydub numpy mediapipe
 
 from pydub import AudioSegment
 from pydub.effects import normalize
