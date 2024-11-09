@@ -11,11 +11,14 @@ def download_all_uris(urls, logger, download_video=False):
         #         pool.map(urls, download)
         #     except Exception as e:
         #         logger.error("Encountered exception: ", e, "for file: ", urls)
-    for i in range(len(urls)):
+    for _, url in enumerate(urls):
         try:
-            download(link=urls[i], logger=logger, preferred_codec='wav', download_video=download_video)
+            download(link=url, logger=logger, preferred_codec='wav', download_video=download_video)
+        except KeyboardInterrupt:
+            logger.info("Keyboard Interrupt")
+            exit(1)
         except Exception as e:
-            logger.error("Encountered exception: ", e, "for file: ", urls[i])
+            logger.error("Encountered exception: ", e, "for file: ", url)
     logger.info("2. Finished downloading")
 
 def download(link, logger, preferred_codec='wav', download_video=False):
@@ -27,7 +30,7 @@ def download(link, logger, preferred_codec='wav', download_video=False):
         'preferredcodec': preferred_codec,
         'preferredquality': '320',
         }],
-    }    
+    }
 
     logger.info(f"Downloading {link}")
     try:
@@ -39,7 +42,7 @@ def download(link, logger, preferred_codec='wav', download_video=False):
         exceptions['WAV'].append(link)
 
     # Download Video
-    if download_video == True:
+    if download_video is True:
         ydl_video = {
             'format': 'best',
         }

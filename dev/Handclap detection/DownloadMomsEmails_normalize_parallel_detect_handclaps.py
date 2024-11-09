@@ -1,3 +1,4 @@
+# pylint: disable=missing-function-docstring,missing-module-docstring
 # download:
 
 # ffprobe.exe
@@ -13,23 +14,23 @@
 
 #!pip install cyrtranslit yt_dlp pydub
 
+import argparse
+import io
+import re
+import os
+from multiprocessing import Pool
+import glob
+import logging as log
+import cyrtranslit
 from pydub import AudioSegment
 from pydub.effects import normalize
 from pydub.effects import compress_dynamic_range
-import re
-import __future__
-import os
-import io
-import argparse
-from multiprocessing import Pool
-import cyrtranslit
-import glob
-import logging as log
 import MailDownloader
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 from google_classifier import Classifier
 
 # TODO: change this to something current:
-output_path = "C:\\Users\\Eitan\\Music\\dev\\Handclap detection"
+OUTPUT_PATH = "C:\\Users\\Eitan\\Music\\dev\\Handclap detection"
 
 
 # Vars:
@@ -38,7 +39,7 @@ SILENCE_AT_BEGINNING_AND_END_MS = 3000
 
 def create_folder():
     folder = input("Please choose the folder name: ")
-    path = os.path.join(output_path, folder)
+    path = os.path.join(OUTPUT_PATH, folder)
 
     if os.path.exists(path):
         print('Folder exists')
@@ -77,7 +78,7 @@ def print_exceptions(exceptions):
 
 
 def print_found_urls(urls):
-    log.info("1. Found the following URIs, {0} in total:".format(len(urls)))
+    log.info(f"1. Found the following URIs, {len(urls)} in total:")
     for i in urls:
         log.info(i)
 
@@ -92,7 +93,6 @@ def normalize_all_filenames():
 def normalize_filename(file: str):
     if not file.endswith('.wav'):
         return
-    
     new_name = file.replace("：", "")
     new_name = file.replace(":", "")
     log.info("3.1 Normalizing {0}".format(file))
@@ -144,11 +144,9 @@ def normalize_audio_file(file):
     else:
         log.info(f"5.1 Normalizing {file}")
         raw_sound = AudioSegment.from_file(file)
-        #normalized_sound = match_target_amplitude(raw_sound, -15.0)
         normalized_file = normalize(raw_sound)
         new_file_name = re.sub("\.wav", "N.wav", file)
         normalized_file.export(new_file_name, format='wav')
-        #normalized_sound.export(new_file, format='wav')
 
         log.info("Deleting " + file)
         os.remove(file)   
@@ -184,10 +182,10 @@ def read_email():
     email_content = []
     print("Paste the email below:")
     try:
-        while(True):
+        while True:
             line = input()
             email_content.append(line)
-    except KeyboardInterrupt as e:
+    except KeyboardInterrupt:
         pass
 
     return email_content
@@ -220,9 +218,8 @@ def convert_to_mp3():
         audio = AudioSegment.from_wav(file)
         filename = file.replace("wav","mp3")
         audio.export(filename,format='mp3')
-    
-        log.info("Deleting " + file)
-        os.remove(file)   
+        log.info("Deleting %s", file)
+        os.remove(file)
 
 
 def configure_log():
@@ -230,7 +227,7 @@ def configure_log():
     level=log.INFO,
     format='%(asctime)s,%(funcName)s,%(levelname)s,%(thread)d,%(message)s',
     handlers=[
-        log.FileHandler(os.path.join(output_path, "debug.log"),'a','utf-8'),
+        log.FileHandler(os.path.join(OUTPUT_PATH, "debug.log"),'a','utf-8'),
         log.StreamHandler()
         ]
     )
@@ -251,15 +248,15 @@ def classify_single_audio_file(audio_file):
 
 def classify_all_audio_files_if_needed(arguments):
     classification_results = {}
-    if arguments.no_classification == False:
+    if arguments.no_classification is False:
         files = get_file_list()
         log.info("7.1 CLASSIFYING FILES")
-        for i in range(len(files)):
-            results = classify_single_audio_file(files[i])
-            audio = AudioSegment.from_file(files[i])
+        for _, file in enumerate(files):
+            results = classify_single_audio_file(file)
+            audio = AudioSegment.from_file(file)
             file_length = audio.duration_seconds
             results["File Length"] = file_length
-            classification_results[files[i]] = results
+            classification_results[file] = results
         log.info("7.2 END CLASSIFYING")
         log_classification_results(classification_results)
     return classification_results
