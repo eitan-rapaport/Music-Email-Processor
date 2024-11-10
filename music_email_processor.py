@@ -5,12 +5,8 @@
 # ffplay.exe
 # ffmpeg.exe
 
-#TODO: fix disk path
-
 # to:
-# C:\Users\eitan.rapaport\AppData\Local\Programs\Python\Python38-32\Scripts
-
-# TODO: filter lists out
+# %appdata%\Local\Programs\Python\Python38-32\Scripts
 
 #!pip install cyrtranslit yt_dlp pydub
 
@@ -18,16 +14,14 @@ import argparse
 import os
 from multiprocessing import Pool
 import logging as log
-import MailDownloader
+import mail_downloader
 from classification_results import ClassificationResults
 from audio_editor import *
+#os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0' // disable annoying error by TF on import
 from email_reader import *
 
-os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 
-# TODO: change this to something current:
-OUTPUT_PATH = "C:\\Users\\Eitan\\Music\\dev\\Handclap detection"
-DEBUG = False
+OUTPUT_PATH = os.getcwd()
 
 # Vars:
 SILENCE_AT_BEGINNING_AND_END_MS = 3000
@@ -46,7 +40,8 @@ def configure_log():
 
 def parse_args():
     parser = argparse.ArgumentParser(
-    description='Download Youtube videos as wav and mp4 and normalize them', prog='Download Youtube MP3')
+    description='Download Youtube videos as wav and mp4 and normalize them',
+    prog='Download Youtube MP3')
     parser.add_argument('--download-video', action='store_true', default=False,
                         help="Download the video")
     parser.add_argument('--keep-original', action='store_true', default=False,
@@ -77,7 +72,7 @@ def create_folder():
 
 def download_files(arguments):
     urls = get_urls_in_email(log)
-    MailDownloader.download_all_uris(urls, log, arguments.download_video)
+    mail_downloader.download_all_uris(urls, log, arguments.download_video)
 
 
 def print_exceptions(exceptions):
@@ -135,7 +130,6 @@ def main():
     classification_results = classify_all_audio_files_if_needed(arguments, log)
     remove_leading_handclaps(classification_results, arguments)
     convert_to_mp3(log)
-    remove_clapping(classification_results, log)
 
 #configuring the logging before the main function so every thread will have logging capabilities
 configure_log()

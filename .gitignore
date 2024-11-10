@@ -1,8 +1,10 @@
 *.mp3
+*.wav
+*.pyc
+backup/*
 *.txt
 *.zip
-*.ini
 *.log
-*.pyc
-*.wav
+*.gz
+*.ini
 dev/Handclap detection/__pycache__/google_classifier.cpython-310.pyc

@@ -1,3 +1,4 @@
+# pylint: disable=missing-function-docstring,missing-module-docstring
 import yt_dlp
 
 exceptions = {'Video': [], 'WAV': []}

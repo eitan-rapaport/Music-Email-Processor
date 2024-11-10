@@ -10,7 +10,7 @@ class Classifier:
     def __init__(self, audio_file_name):
         self.audio_file_name = audio_file_name
         # Customize and associate model for Classifier
-        self.base_options = python.BaseOptions(model_asset_path='classifier.tflite')
+        self.base_options = python.BaseOptions(model_asset_path='..\classifier.tflite')
         self.options = audio.AudioClassifierOptions(
             base_options=self.base_options, max_results=4)
 
@@ -22,10 +22,22 @@ class Classifier:
             wav_data.astype(float) / np.iinfo(np.int16).max, sample_rate)
             classification_result_list = classifier.classify(audio_clip)
 
+        results = {
+             "Applause" : [],
+             "Speech" : [],
+             "Silence" : []
+        }
         # Iterate through clips to display classifications
         for idx, timestamp in enumerate(range(len(classification_result_list))):
             classification_result = classification_result_list[idx]
             top_category = classification_result.classifications[0].categories[0]
-            if top_category.category_name in ['Speech', 'Applause', 'Silence']:
-                print(f'Timestamp {timestamp}: {top_category.category_name} ({top_category.score:.2f})')
-
+            if top_category.category_name == "Speech":
+                results["Speech"].append(timestamp)
+            if top_category.category_name == "Applause":
+                results["Applause"].append(timestamp)
+            if top_category.category_name == "Silence":
+                results["Silence"].append(timestamp)
+            # if top_category.category_name in ['Speech', 'Applause', 'Silence']:
+            #         results[timestamp] = (top_category.category_name)
+        results["Length"] = len(classification_result_list)
+        return results
