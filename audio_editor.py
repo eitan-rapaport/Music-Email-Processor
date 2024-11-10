@@ -128,15 +128,6 @@ def convert_to_mp3(log):
         os.remove(file)
 
 
-def remove_clapping(classification_results, log):
-    #BUG: it seems that the classifier is sometimes returning indexes of Silent\Applause\Speech that are
-    # bigger than file length. e.g: "Tchaikovsky Waltz from Sleeping Beauty"
-    # File length 293 seconds. Silence indexes: [0, 1, 2, 294, 295, 296, 297, 298, 299, 300]
-    for file, results in classification_results.items():
-        if len(results["Applause"]) >= 2:
-            log.info(f"{file} has more than 3 seconds of applause")
-
-
 def classify_single_audio_file(audio_file):
     classifier = Classifier(audio_file)
     return classifier.identify()

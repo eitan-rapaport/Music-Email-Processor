@@ -3,7 +3,7 @@
 import unittest
 import argparse
 from classification_results import ClassificationResults
-from MusicEmailProcessor import remove_leading_handclaps
+from music_email_processor import remove_leading_handclaps
 from email_reader import find_urls_in_email
 import logging as log
 
