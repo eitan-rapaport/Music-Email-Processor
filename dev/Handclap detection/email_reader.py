@@ -37,7 +37,6 @@ def parse_all_email_lines(email_content):
         with io.open('email.txt', 'a', encoding='utf-8') as f:
             f.write(line + "\n")
         urls.append(parse_email(line))
-
     return urls
 
 

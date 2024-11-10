@@ -4,9 +4,20 @@ import unittest
 import argparse
 from classification_results import ClassificationResults
 from DownloadMomsEmails import remove_leading_handclaps
+from email_reader import find_urls_in_email
+import logging as log
 
-class TestStringMethods(unittest.TestCase):
-    
+def configure_log():
+    log.basicConfig(
+    level=log.INFO,
+    format='%(asctime)s,%(funcName)s,%(levelname)s,%(thread)d,%(message)s',
+    handlers=[
+        log.StreamHandler()
+        ]
+    )
+
+class TestMailDownloader(unittest.TestCase):
+
     def parse_args(self):
         parser = argparse.ArgumentParser(
         description='Download Youtube videos as wav and mp4 and normalize them',
@@ -35,6 +46,25 @@ class TestStringMethods(unittest.TestCase):
         list_of_cr = []
         list_of_cr.append(cr)
         self.assertTrue(remove_leading_handclaps(list_of_cr, arguments=args))
+
+
+    def test_url_detection(self):
+        email_content = [
+        "Chopin - 7 Polonaises Op. 26, 40, 44, 53, 61 - Vladimir Ashkenazy",
+        "https://www.youtube.com/watch?v=Pp4v42suFQg from 37.03 till 43.17",
+        "Tchaikovsky - Eugene Onegin, Polonaise - Temirkanov",
+        "https://www.youtube.com/watch?v=k0diQumrDmg 4.23",
+        "Aida Garifullina, Giacomo Puccini: Quando m'en vo (La Bohème, Musetta's Waltz)",
+        "https://www.youtube.com/watch?v=NJaKA7d8jV8 2.53",
+        "Pavarotti- Rossini- La Danza",
+        "https://www.youtube.com/watch?v=2DbwrU3QZsA 3.18",
+        "Alfredo Kraus - Siciliana (Mascagni - Cavalleria rusticana)",
+        "https://www.youtube.com/watch?v=BX9lY8A3f8w 2.23"
+        ]
+        urls = find_urls_in_email(email_content, log)
+        print(urls)
+        self.assertEqual(len(urls), 5)
+
 
 if __name__ == '__main__':
     unittest.main()

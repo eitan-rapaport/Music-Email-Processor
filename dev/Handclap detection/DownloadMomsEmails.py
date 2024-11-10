@@ -116,12 +116,9 @@ def apply_main_logic_sequential():
 def remove_leading_handclaps(classification_results: list[ClassificationResults], arguments):
     if not arguments.debug:
         return
-    print(classification_results)
     starting_seconds = [0,1,2,3,4,5,6]
-    print(starting_seconds)
     for cr in classification_results:
         res = [i for i in cr.applause if i in starting_seconds]
-    print("res is: %s", res)
     return True
 
 
