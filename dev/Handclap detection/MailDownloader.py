@@ -1,16 +1,9 @@
 import yt_dlp
-#from multiprocessing import Pool
 
 exceptions = {'Video': [], 'WAV': []}
 
 def download_all_uris(urls, logger, download_video=False):
     logger.info("2. Downloading URLs")
-    #for parallelism. note - no args:
-        # with Pool() as pool:
-        #     try:
-        #         pool.map(urls, download)
-        #     except Exception as e:
-        #         logger.error("Encountered exception: ", e, "for file: ", urls)
     for _, url in enumerate(urls):
         try:
             download(link=url, logger=logger, preferred_codec='wav', download_video=download_video)

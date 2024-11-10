@@ -3,4 +3,6 @@
 *.zip
 *.ini
 *.log
-backup/DownloadMomsEmails_normalize.py
+*.pyc
+*.wav
+dev/Handclap detection/__pycache__/google_classifier.cpython-310.pyc
