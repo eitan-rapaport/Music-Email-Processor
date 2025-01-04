@@ -2,7 +2,7 @@
 
 import re
 import os
-from multiprocessing import Pool
+from time import time
 import glob
 import cyrtranslit
 from pydub import AudioSegment
@@ -30,46 +30,32 @@ def normalize_filename(file: str, log):
         return
     new_name = file.replace("：", "")
     new_name = file.replace(":", "")
-    log.info("3.1 Normalizing {0}".format(file))
+    log.info(f"3.1 Normalizing {file}")
     #fix cyrillic characters
-    new_name = re.sub('\W+', ' ', cyrtranslit.to_latin(file, "ru"))
+    new_name = re.sub(r'\W+', ' ', cyrtranslit.to_latin(file, "ru"))
     new_name = re.sub(' wav', ".wav", new_name)
     os.replace(file, new_name)
-    log.info("3.2 Replaced. Old file name: {0}, New file name: {1}".format(file, new_name))
+    log.info(f"3.2 Replaced. Old file name: {file}, New file name: {new_name}")
     return new_name
-
-
-def compress_all_files(log):
-    files = get_file_list()
-    log.info(f"4. Compressing all files")
-    with Pool() as pool:
-        pool.map(compress_file, files)
-    log.info("4. Finished compressing")
 
 
 def compress_file(file, log):
     if not file.endswith('.wav'):
         pass
     else:
+        start = time()
         log.info(f'4.1 Compressing: -- {file}')
         raw_sound = AudioSegment.from_file(file)
         compressed_sound = compress_dynamic_range(raw_sound, -20, 6)
-        new_file = re.sub("\.wav", "_C.wav", file)
+        new_file = re.sub(r"\.wav", "_C.wav", file)
         compressed_sound.export(new_file , format='wav')
 
-        log.info("Deleting " + file)
+        log.info("4.2 Deleting -- " + file)
         os.remove(file)
-
-        log.info(f"4.2 Compressed {new_file}")
+        end = time()
+        elapsed = end - start
+        log.info(f"4.3 Compressed -- {new_file} took {elapsed} seconds")
         return new_file
-
-
-def normalize_all_audio_files(log):
-    files = get_file_list()
-    log.info("5. Normalizing files...")
-    with Pool() as pool:
-        pool.map(normalize_audio_file, files)
-    log.info("5. Finished normalizing")
 
 
 def normalize_audio_file(file, log):
@@ -77,39 +63,36 @@ def normalize_audio_file(file, log):
         pass
 
     else:
-        log.info(f"5.1 Normalizing {file}")
+        log.info(f"5.1 Normalizing -- {file}")
+        start = time()
         raw_sound = AudioSegment.from_file(file)
-        normalized_file = normalize(raw_sound, 1)
-        new_file_name = re.sub("\.wav", "N.wav", file)
+        normalized_file = normalize(raw_sound, 0.1)
+        new_file_name = re.sub(r"\.wav", "N.wav", file)
         normalized_file.export(new_file_name, format='wav')
 
-        log.info("Deleting " + file)
-        os.remove(file)   
-        log.info(f"5.2 Normalized {new_file_name}")     
+        log.info("5.2 Deleting -- " + file)
+        os.remove(file)
+        end = time()
+        elapsed = end - start
+        log.info(f"5.3 Normalized -- {new_file_name} took {elapsed} seconds")
         return new_file_name
 
 
-def add_ms_of_silence_to_all_files(log):
-    files = get_file_list()
-    log.info("6. Add silence to files")
-    with Pool() as pool:
-        pool.map(add_silence_to_file, files)
-    log.info("6. Finished adding silence ")
-
-
 def add_silence_to_file(file, log):
-    log.info(f"6.1 Adding silence to file {file}")
+    log.info(f"6.1 Adding silence to file -- {file}")
+    start = time()
     raw_sound = AudioSegment.from_file(file)
     sample = raw_sound[:SILENCE_AT_BEGINNING_AND_END_MS]
     sample = sample - 70
     output = sample + raw_sound + sample
-    new_file = re.sub("\.wav", "S.wav", file)
+    new_file = re.sub(r"\.wav", "S.wav", file)
     output.export(new_file, format='wav')
 
-    log.info("Deleting " + file)
+    log.info("6.2 Deleting -- " + file)
     os.remove(file)
-
-    log.info(f"6.2 Added silence to {new_file}")
+    end = time()
+    elapsed = end - start
+    log.info(f"6.3 Added silence to -- {new_file} took {elapsed} seconds")
     return new_file
 
 
@@ -124,7 +107,7 @@ def convert_to_mp3(log):
         audio = AudioSegment.from_wav(file)
         filename = file.replace("wav","mp3")
         audio.export(filename,format='mp3')
-        log.info("Deleting %s", file)
+        log.info("Deleting -- %s", file)
         os.remove(file)
 
 

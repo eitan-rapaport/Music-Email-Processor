@@ -16,12 +16,11 @@ from multiprocessing import Pool
 import logging as log
 import mail_downloader
 from classification_results import ClassificationResults
-from audio_editor import *
+from audio_editor import classify_all_audio_files_if_needed, normalize_filename, convert_to_mp3
+from audio_editor import compress_file, normalize_audio_file, add_silence_to_file, get_file_list
 #os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0' // disable annoying error by TF on import
-from email_reader import *
+from email_reader import get_urls_in_email
 
-
-OUTPUT_PATH = os.getcwd()
 
 # Vars:
 SILENCE_AT_BEGINNING_AND_END_MS = 3000
@@ -32,7 +31,7 @@ def configure_log():
     level=log.INFO,
     format='%(asctime)s,%(funcName)s,%(levelname)s,%(thread)d,%(message)s',
     handlers=[
-        log.FileHandler(os.path.join(OUTPUT_PATH, "debug.log"),'a','utf-8'),
+        log.FileHandler(os.path.join(os.getcwd(), "debug.log"),'a','utf-8'),
         log.StreamHandler()
         ]
     )
@@ -58,7 +57,7 @@ def parse_args():
 
 def create_folder():
     folder = input("Please choose the folder name: ")
-    path = os.path.join(OUTPUT_PATH, folder)
+    path = os.path.join(os.getcwd(), folder)
 
     if os.path.exists(path):
         print('Folder exists')
@@ -75,31 +74,25 @@ def download_files(arguments):
     mail_downloader.download_all_uris(urls, log, arguments.download_video)
 
 
-def print_exceptions(exceptions):
-    if len(exceptions['WAV']) > 0:
-        log.error("### WAV Exceptions ###")
-        for i in exceptions['WAV']:
-            log.error(i)
-
-    if len(exceptions['Video']) > 0:
-        log.error("### Video Exceptions ###")
-        for i in exceptions['Video']:
-            log.error(i)
-
-
 def apply_logic_to_file(file):
+    configure_log()
+    global SILENCE_AT_BEGINNING_AND_END_MS
+    log.info("Starting main logic")
     filename = normalize_filename(file, log)
     filename = compress_file(filename, log)
     filename = normalize_audio_file(filename, log)
     filename = add_silence_to_file(filename, log)
+    log.info("Finished main logic")
 
 # Main flows
 def apply_main_logic():
     files = get_file_list()
-    p = Pool(len(files))
-    p.map(apply_logic_to_file, files)
-    p.close()
-    p.join()
+    num_of_files = len(files)
+    log.info("Creating %i threads", num_of_files)
+    with Pool(num_of_files) as p:
+        p.map(apply_logic_to_file, files)
+        p.close()
+        p.join()
 
 
 def apply_main_logic_sequential():
@@ -111,9 +104,10 @@ def apply_main_logic_sequential():
 def remove_leading_handclaps(classification_results: list[ClassificationResults], arguments):
     if not arguments.debug:
         return
-    starting_seconds = [0,1,2,3,4,5,6]
+    #starting_seconds = [0,1,2,3,4,5,6]
     for cr in classification_results:
-        res = [i for i in cr.applause if i in starting_seconds]
+        #res = [i for i in cr.applause if i in starting_seconds]
+        pass
     return True
 
 
@@ -132,7 +126,6 @@ def main():
     convert_to_mp3(log)
 
 #configuring the logging before the main function so every thread will have logging capabilities
-configure_log()
 
 if __name__ == "__main__":
     main()
