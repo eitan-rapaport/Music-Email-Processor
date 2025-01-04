@@ -18,8 +18,11 @@ import mail_downloader
 from classification_results import ClassificationResults
 from audio_editor import classify_all_audio_files_if_needed, normalize_filename, convert_to_mp3
 from audio_editor import compress_file, normalize_audio_file, add_silence_to_file, get_file_list
+from audio_editor import shorten_file
 #os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0' // disable annoying error by TF on import
 from email_reader import get_urls_in_email
+from file_info import FileInfo
+from typing import List
 
 
 # Vars:
@@ -70,8 +73,9 @@ def create_folder():
 # Parse email
 
 def download_files(arguments):
-    urls = get_urls_in_email(log)
-    mail_downloader.download_all_uris(urls, log, arguments.download_video)
+    urls_and_tills = get_urls_in_email(log)
+    downloaded_files = mail_downloader.download_all_uris(urls_and_tills, log, arguments.download_video)
+    return downloaded_files
 
 
 def apply_logic_to_file(file):
@@ -111,11 +115,27 @@ def remove_leading_handclaps(classification_results: list[ClassificationResults]
     return True
 
 
+def get_file_from_list(file: str, files: List[str]):
+    for f in files:
+        if f.startswith(file):
+            return f
+
+def remove_marked_areas(files: List[FileInfo]):
+    for file in files:
+        if file.till == 0:
+            continue
+        current_files = get_file_list()
+        relevant_file = get_file_from_list(file.name, current_files)
+        shorten_file(relevant_file, file.till)
+
+
+
 def main():
     arguments = parse_args()
     create_folder()
     configure_log()
-    download_files(arguments)
+    downloaded_files = download_files(arguments)
+    remove_marked_areas(downloaded_files)
     if arguments.debug:
         pass
         #apply_main_logic_sequential()

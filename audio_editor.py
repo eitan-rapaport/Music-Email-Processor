@@ -18,6 +18,14 @@ def get_file_list():
     return glob.glob("*.wav")
 
 
+def shorten_file(file, till):
+    audio = AudioSegment.from_file(file, format='wav')
+    till_in_seconds = till * 1000
+    added_ten_seconds = till_in_seconds + 10 * 1000
+    new_audio_segment = audio[:added_ten_seconds]
+    new_audio_segment.export(file, format='wav')
+
+
 def normalize_all_filenames(log):
     files = get_file_list()
     log.info("3. Normalizing all file names")
