@@ -9,17 +9,17 @@ def convert_to_seconds(timestamp):
     return secs
 
 
-def parse_email(mail):
+def parse_line(line):
     try:
-        url = re.match("(https?://[^\s]+)", mail).group(0)
+        url = re.match("(https?://[^\s]+)", line).group(0)
         url = re.sub("&list=.*", "", url)
-        till = re.match(".*till ([0-9]{1,2}.[0-9]{1,2})", mail)
-        if till is None:
-            till = 0
+        end_timestamp = re.match(".*end_timestamp ([0-9]{1,2}.[0-9]{1,2})", line)
+        if end_timestamp is None:
+            end_timestamp = 0
         else:
-            till = till.group(1)
-            till = convert_to_seconds(till)
-        return url, till
+            end_timestamp = end_timestamp.group(1)
+            end_timestamp = convert_to_seconds(end_timestamp)
+        return url, end_timestamp
     except:
         return  "",0
 
@@ -48,9 +48,9 @@ def parse_all_email_lines(email_content):
     for line in email_content:
         with io.open('email.txt', 'a', encoding='utf-8') as f:
             f.write(line + "\n")
-        url, till = parse_email(line)
+        url, end_timestamp = parse_line(line)
         if url != '':
-            urls.append((url, till))
+            urls.append((url, end_timestamp))
     return urls
 
 

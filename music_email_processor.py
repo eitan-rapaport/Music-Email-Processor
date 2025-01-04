@@ -73,8 +73,9 @@ def create_folder():
 # Parse email
 
 def download_files(arguments):
-    urls_and_tills = get_urls_in_email(log)
-    downloaded_files = mail_downloader.download_all_uris(urls_and_tills, log, arguments.download_video)
+    urls_and_end_timestamps = get_urls_in_email(log)
+    downloaded_files = mail_downloader.download_all_uris(
+        urls_and_end_timestamps, log, arguments.download_video)
     return downloaded_files
 
 
@@ -122,11 +123,11 @@ def get_file_from_list(file: str, files: List[str]):
 
 def remove_marked_areas(files: List[FileInfo]):
     for file in files:
-        if file.till == 0:
+        if file.end_timestamp == 0:
             continue
         current_files = get_file_list()
         relevant_file = get_file_from_list(file.name, current_files)
-        shorten_file(relevant_file, file.till)
+        shorten_file(relevant_file, file.end_timestamp)
 
 
 

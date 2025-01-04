@@ -4,16 +4,16 @@ import yt_dlp
 
 exceptions = {'Video': [], 'WAV': []}
 
-def download_all_uris(urls_and_tills, logger, download_video=False):
+def download_all_uris(urls_and_timestamps, logger, download_video=False):
     logger.info("2. Downloading URLs")
     files_info = []
-    for _, url in enumerate(urls_and_tills):
+    for _, url in enumerate(urls_and_timestamps):
         try:
             title = download(link=url[0], logger=logger, preferred_codec='wav', download_video=download_video)
             fi = FileInfo
             fi.link = url[0]
             fi.name = title
-            fi.till = url[1]
+            fi.end_timestamp = url[1]
             files_info.append(fi)
         except KeyboardInterrupt:
             logger.info("Keyboard Interrupt")

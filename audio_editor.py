@@ -18,10 +18,10 @@ def get_file_list():
     return glob.glob("*.wav")
 
 
-def shorten_file(file, till):
+def shorten_file(file, end_timestamp):
     audio = AudioSegment.from_file(file, format='wav')
-    till_in_seconds = till * 1000
-    added_ten_seconds = till_in_seconds + 10 * 1000
+    timestamp_in_seconds = end_timestamp * 1000
+    added_ten_seconds = timestamp_in_seconds + 10 * 1000
     new_audio_segment = audio[:added_ten_seconds]
     new_audio_segment.export(file, format='wav')
 
