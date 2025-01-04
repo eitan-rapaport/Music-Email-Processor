@@ -10,10 +10,7 @@ def download_all_uris(urls_and_timestamps, logger, download_video=False):
     for _, url in enumerate(urls_and_timestamps):
         try:
             title = download(link=url[0], logger=logger, preferred_codec='wav', download_video=download_video)
-            fi = FileInfo
-            fi.link = url[0]
-            fi.name = title
-            fi.end_timestamp = url[1]
+            fi = FileInfo(title, url[1], url[0])
             files_info.append(fi)
         except KeyboardInterrupt:
             logger.info("Keyboard Interrupt")

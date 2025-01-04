@@ -13,7 +13,7 @@ def parse_line(line):
     try:
         url = re.match("(https?://[^\s]+)", line).group(0)
         url = re.sub("&list=.*", "", url)
-        end_timestamp = re.match(".*end_timestamp ([0-9]{1,2}.[0-9]{1,2})", line)
+        end_timestamp = re.match(".*till ([0-9]{1,2}.[0-9]{1,2})", line)
         if end_timestamp is None:
             end_timestamp = 0
         else:

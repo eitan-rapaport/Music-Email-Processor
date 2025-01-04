@@ -127,7 +127,7 @@ def remove_marked_areas(files: List[FileInfo]):
             continue
         current_files = get_file_list()
         relevant_file = get_file_from_list(file.name, current_files)
-        shorten_file(relevant_file, file.end_timestamp)
+        shorten_file(relevant_file, file.end_timestamp, log)
 
 
 

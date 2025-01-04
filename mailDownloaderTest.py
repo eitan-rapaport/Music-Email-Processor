@@ -36,20 +36,20 @@ class TestMailParser(unittest.TestCase):
         #     link = "https://www.youtube.com/watch?v=BX9lY8A3f8w"
         #     download(link, log)
             
-        # def test_download_multiple(self):
-        #     configure_log()
-        #     email_content = [
-        #     "K Vilensky Variations On The Themes By Bac",
-        #     "https://www.youtube.com/watch?v=z3nY7lJztcM till 2.23                                National Philharmonic Society of Ukraine, Kiev, 12.01.14",
-        #     "Mischa Maisky plays Bach Cello Suite No.1 in G (full)",
-        #     "https://www.youtube.com/watch?v=mGQLXRTl3Z0 till 2.44",
-        #     "Kerson Leong and Ryan Roberts play Bach: Concerto for Oboe and Violin - 3rd movement",
-        #     "https://www.youtube.com/watch?v=NJaKA7d8jV8 2.53",
-        #     "Pavarotti- Rossini- La Danza",
-        #     "https://www.youtube.com/watch?v=eRwikZiIYdM 3.51"
-        #     ]
-        #     urls = find_urls_in_email(email_content, log)
-        #     file_infos = download_all_uris(urls, log)
+        def test_download_multiple(self):
+            configure_log()
+            email_content = [
+            "K Vilensky Variations On The Themes By Bac",
+            "https://www.youtube.com/watch?v=z3nY7lJztcM till 2.23                                National Philharmonic Society of Ukraine, Kiev, 12.01.14",
+            "Mischa Maisky plays Bach Cello Suite No.1 in G (full)",
+            "https://www.youtube.com/watch?v=mGQLXRTl3Z0 till 2.44",
+            "Kerson Leong and Ryan Roberts play Bach: Concerto for Oboe and Violin - 3rd movement",
+            "https://www.youtube.com/watch?v=NJaKA7d8jV8 2.53",
+            "Pavarotti- Rossini- La Danza",
+            "https://www.youtube.com/watch?v=eRwikZiIYdM 3.51"
+            ]
+            urls = find_urls_in_email(email_content, log)
+            file_infos = download_all_uris(urls, log)
 
             
             
