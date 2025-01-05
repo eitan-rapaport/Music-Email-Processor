@@ -23,8 +23,9 @@ def shorten_file(file, end_timestamp, log):
     current_length = audio.duration_seconds
     timestamp_in_seconds = end_timestamp * 1000
     added_ten_seconds = timestamp_in_seconds + 10 * 1000
-    log.info(f"Shortening {file} from {current_length} to {add_silence_to_file}")
     new_audio_segment = audio[:added_ten_seconds]
+    new_length = new_audio_segment.duration_seconds
+    log.info(f"Shortened {file} from {current_length} to {new_length}")
     new_audio_segment.export(file, format='wav')
 
 
