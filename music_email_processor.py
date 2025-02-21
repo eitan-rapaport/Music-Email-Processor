@@ -10,19 +10,20 @@
 
 #!pip install cyrtranslit yt_dlp pydub
 
+from typing import List
 import argparse
 import os
 from multiprocessing import Pool
 import logging as log
 import mail_downloader
 from classification_results import ClassificationResults
-from audio_editor import classify_all_audio_files_if_needed, normalize_filename, convert_to_mp3
-from audio_editor import compress_file, normalize_audio_file, add_silence_to_file, get_file_list
+from audio_editor import classify_all_audio_files_if_needed, convert_to_mp3
+from audio_editor import compress_file, normalize_audio_file, add_silence_to_file
 from audio_editor import shorten_file
+from file_manager import get_file_list, normalize_filename
 #os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0' // disable annoying error by TF on import
 from email_reader import get_urls_in_email
 from file_info import FileInfo
-from typing import List
 
 
 # Vars:
@@ -123,12 +124,12 @@ def get_file_from_list(file: str, files: List[str]):
 
 def remove_marked_areas(files: List[FileInfo]):
     for file in files:
-        if file.end_timestamp == 0:
-            continue
-        current_files = get_file_list()
-        relevant_file = get_file_from_list(file.name, current_files)
-        shorten_file(relevant_file, file.end_timestamp, log)
-
+        try:
+            if file.end_timestamp == 0:
+                continue
+            shorten_file(file.name, file.end_timestamp, log)
+        except Exception as e:
+            log.error(f"Failed to download {file.name} because of error", exc_info=e)
 
 
 def main():

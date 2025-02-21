@@ -1,16 +1,19 @@
 # pylint: disable=missing-function-docstring,missing-module-docstring
-from file_info import FileInfo
 import yt_dlp
+from file_info import FileInfo
+from file_manager import get_new_file_name
 
+EXT="wav"
 exceptions = {'Video': [], 'WAV': []}
 
-def download_all_uris(urls_and_timestamps, logger, download_video=False):
+def download_all_uris(urls_and_timestamps, logger, include_vid=False):
     logger.info("2. Downloading URLs")
     files_info = []
     for _, url in enumerate(urls_and_timestamps):
         try:
-            title = download(link=url[0], logger=logger, preferred_codec='wav', download_video=download_video)
-            fi = FileInfo(title, url[1], url[0])
+            download(link=url[0], logger=logger, preferred_codec=EXT, download_video=include_vid)
+            title = get_new_file_name(files_info)
+            fi = FileInfo(f"{title}", url[1], url[0])
             files_info.append(fi)
         except KeyboardInterrupt:
             logger.info("Keyboard Interrupt")
@@ -19,6 +22,7 @@ def download_all_uris(urls_and_timestamps, logger, download_video=False):
             logger.error("Encountered exception: ", e, "for file: ", url)
     logger.info("2. Finished downloading")
     return files_info
+
 
 def download(link, logger, preferred_codec='wav', download_video=False):
 # Download audio
@@ -29,6 +33,7 @@ def download(link, logger, preferred_codec='wav', download_video=False):
         'preferredcodec': preferred_codec,
         'preferredquality': '320'
         }],
+    'outtmpl': '%(title)s.%(ext)s'
     }
 
     logger.info(f"Downloading {link}")
