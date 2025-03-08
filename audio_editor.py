@@ -3,40 +3,26 @@
 import re
 import os
 from time import time
-import glob
-import cyrtranslit
 from pydub import AudioSegment
 from pydub.effects import normalize
 from pydub.effects import compress_dynamic_range
 from google_classifier import Classifier
 from classification_results import ClassificationResults
-os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+from file_manager import get_file_list
 
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 SILENCE_AT_BEGINNING_AND_END_MS = 3000
 
-def get_file_list():
-    return glob.glob("*.wav")
 
-
-def normalize_all_filenames(log):
-    files = get_file_list()
-    log.info("3. Normalizing all file names")
-    for file in files:
-        normalize_filename(file, log)
-
-
-def normalize_filename(file: str, log):
-    if not file.endswith('.wav'):
-        return
-    new_name = file.replace("：", "")
-    new_name = file.replace(":", "")
-    log.info(f"3.1 Normalizing {file}")
-    #fix cyrillic characters
-    new_name = re.sub(r'\W+', ' ', cyrtranslit.to_latin(file, "ru"))
-    new_name = re.sub(' wav', ".wav", new_name)
-    os.replace(file, new_name)
-    log.info(f"3.2 Replaced. Old file name: {file}, New file name: {new_name}")
-    return new_name
+def shorten_file(file, end_timestamp, log):
+    audio = AudioSegment.from_file(file, format='wav')
+    current_length = audio.duration_seconds
+    timestamp_in_seconds = end_timestamp * 1000
+    added_ten_seconds = timestamp_in_seconds + 10 * 1000
+    new_audio_segment = audio[:added_ten_seconds]
+    new_length = new_audio_segment.duration_seconds
+    log.info(f"Shortened {file} from {current_length} to {new_length}")
+    new_audio_segment.export(file, format='wav')
 
 
 def compress_file(file, log):
@@ -114,7 +100,6 @@ def convert_to_mp3(log):
 def classify_single_audio_file(audio_file):
     classifier = Classifier(audio_file)
     return classifier.identify()
-
 
 
 def log_classification_results(classification_results, log):

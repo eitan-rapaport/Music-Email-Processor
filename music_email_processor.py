@@ -10,16 +10,20 @@
 
 #!pip install cyrtranslit yt_dlp pydub
 
+from typing import List
 import argparse
 import os
 from multiprocessing import Pool
 import logging as log
 import mail_downloader
 from classification_results import ClassificationResults
-from audio_editor import classify_all_audio_files_if_needed, normalize_filename, convert_to_mp3
-from audio_editor import compress_file, normalize_audio_file, add_silence_to_file, get_file_list
+from audio_editor import classify_all_audio_files_if_needed, convert_to_mp3
+from audio_editor import compress_file, normalize_audio_file, add_silence_to_file
+from audio_editor import shorten_file
+from file_manager import get_file_list, normalize_filename
 #os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0' // disable annoying error by TF on import
 from email_reader import get_urls_in_email
+from file_info import FileInfo
 
 
 # Vars:
@@ -70,8 +74,10 @@ def create_folder():
 # Parse email
 
 def download_files(arguments):
-    urls = get_urls_in_email(log)
-    mail_downloader.download_all_uris(urls, log, arguments.download_video)
+    urls_and_end_timestamps = get_urls_in_email(log)
+    downloaded_files = mail_downloader.download_all_uris(
+        urls_and_end_timestamps, log, arguments.download_video)
+    return downloaded_files
 
 
 def apply_logic_to_file(file):
@@ -111,11 +117,27 @@ def remove_leading_handclaps(classification_results: list[ClassificationResults]
     return True
 
 
+def get_file_from_list(file: str, files: List[str]):
+    for f in files:
+        if f.startswith(file):
+            return f
+
+def remove_marked_areas(files: List[FileInfo]):
+    for file in files:
+        try:
+            if file.end_timestamp == 0:
+                continue
+            shorten_file(file.name, file.end_timestamp, log)
+        except Exception as e:
+            log.error(f"Failed to download {file.name} because of error", exc_info=e)
+
+
 def main():
     arguments = parse_args()
     create_folder()
     configure_log()
-    download_files(arguments)
+    downloaded_files = download_files(arguments)
+    remove_marked_areas(downloaded_files)
     if arguments.debug:
         pass
         #apply_main_logic_sequential()
